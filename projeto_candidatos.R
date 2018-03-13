@@ -119,9 +119,9 @@ legendas_df <- legendas_df %>%
 legendas_df %>% 
   count(TIPO_LEGENDA)
 
-# 3. Consistência dos Dados -----------------------------------------------
-
 rm(legendas_ls, candidatos_ls)
+
+# 3. Consistência dos Dados -----------------------------------------------
 
 #' Antes de criar um banco de dados das coligações vou criar um banco de dados dos partidos.
 #' Realizei isso em dois passos: 1) Criei um banco de partidos a partir do banco de legendas;
@@ -132,7 +132,7 @@ rm(legendas_ls, candidatos_ls)
 
 partidos1_df <- legendas_df %>% 
   select(SIGLA_PARTIDO, NOME_COLIGACAO, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA) %>% 
-  arrange(ANO_ELEICAO, SIGLA_UF) %>% 
+  arrange(ANO_ELEICAO, SIGLA_UF, NOME_COLIGACAO) %>% 
   distinct()
 
 # Tentando entender o que a categoria #NE# correspode
@@ -144,13 +144,14 @@ partidos1_df %>%
   filter(NOME_COLIGACAO == "#NE#") %>% 
   count(TIPO_LEGENDA)
 
+
 #' Como essa categoria só possui TIPO_LEGENDA == PARTIDO_ISOLADO,
 #' vou transformar o #NE# no nome do partido para facilitar a criação
 #' de um banco de coligações.
 
 partidos1_df <- partidos1_df %>% 
-  mutate(NOME_COLIGACAO = case_when(NOME_COLIGACAO == "#NE#" ~ SIGLA_PARTIDO,
-                                    T                        ~ NOME_COLIGACAO))
+  mutate(NOME_COLIGACAO = case_when(NOME_COLIGACAO %in% c("#NE#", "PARTIDO ISOLADO") ~ SIGLA_PARTIDO,
+                                    T                                                ~ NOME_COLIGACAO))
 
 #' Agora, eu explorei o banco de candidatos. Esse banco é essencial para
 #' a criação do banco coligações já que me permite comparar os resultados.
@@ -185,6 +186,8 @@ partidos1_df %>%
   inner_join(partidos2_NE) %>%
   filter(TIPO_LEGENDA == "COLIGACAO")
 
+rm(partidos2_NE)
+
 #' A maioria se classifica como PARTIDO_ISOLADO, mas 6 casos constam como coligação.
 #' A fim de verificar qual a situação desses partidos nas eleições de 2010, utilizei o 
 #' <http://eleicoes.terra.com.br/apuracao/2010/1turno/> e pesquisei um por um. Aparentemente,
@@ -198,6 +201,7 @@ partidos2_df <- partidos2_df %>%
                                     T                                                ~ NOME_COLIGACAO),
          TIPO_LEGENDA   = case_when(SIGLA_PARTIDO == NOME_COLIGACAO ~ "PARTIDO_ISOLADO",
                                     T                               ~ "COLIGACAO"))
+
 #' Verifiquei se há repetições de partidos nos dois bancos.
 
 partidos1_df %>% 
@@ -301,40 +305,75 @@ coligacoes_df <- partidos_df %>%
   select(NOME_LEGENDA, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA) %>% 
   distinct()
 
+coligacoes_df %>% 
+  count(NOME_LEGENDA, SIGLA_UF, ANO_ELEICAO) %>% 
+  filter(n > 1)
+
 # 5. Candidatos disponíveis por distrito ----------------------------------
 
+# Banco com as magnitudes
 mag_df <- readxl::read_xlsx("Magnitude_UF.xlsx") %>% 
   rename(SIGLA_UF = UF)
 
+#' Criação do quantidade possível de candidatos por coligação
 coligacoes_df <- coligacoes_df %>% 
   left_join(mag_df) %>% 
-  mutate(possiveis = case_when(TIPO_LEGENDA == "COLIGACAO"       & Magnitude >= 19 ~ Magnitude * 2,
-                               TIPO_LEGENDA == "COLIGACAO"       & Magnitude <  19 ~ Magnitude * 3,
-                               TIPO_LEGENDA == "PARTIDO_ISOLADO" & Magnitude >= 19 ~ Magnitude * 1.5,
-                               TIPO_LEGENDA == "PARTIDO_ISOLADO" & Magnitude <  19 ~ Magnitude * 2))
+  mutate(CAND_POSSIVEIS = case_when(TIPO_LEGENDA == "COLIGACAO"       & Magnitude >= 20 ~ Magnitude * 2,
+                                    TIPO_LEGENDA == "COLIGACAO"       & Magnitude <  20 ~ Magnitude * 3,
+                                    TIPO_LEGENDA == "PARTIDO_ISOLADO" & Magnitude >= 20 ~ Magnitude * 1.5,
+                                    TIPO_LEGENDA == "PARTIDO_ISOLADO" & Magnitude <  20 ~ Magnitude * 2))
 
+#" Banco com a quantidade de candidatos apresentados por coligação
+quanti_candi <- candidatos_df %>% 
+  filter(DES_SITUACAO_CANDIDATURA == "DEFERIDO") %>% 
+  mutate(NOME_LEGENDA = case_when(is.na(NOME_COLIGACAO)               ~ "O MARANHÃO NÃO PODE PARAR - F2",
+                                  NOME_COLIGACAO == "#NE#"            ~ SIGLA_PARTIDO,
+                                  NOME_COLIGACAO == "PARTIDO ISOLADO" ~ SIGLA_PARTIDO,
+                                  T                                   ~ NOME_COLIGACAO)) %>% 
+  count(NOME_LEGENDA, SIGLA_UF, ANO_ELEICAO) %>% 
+  rename(CAND_APRES = n)
+
+#' Adicionando quantidade de candidatos apresentados por coligação
+coligacoes_df <- coligacoes_df %>% 
+  left_join(quanti_candi) %>% 
+  mutate(CAND_APRES = ifelse(is.na(CAND_APRES), 0, CAND_APRES))
+
+#' Verificando se a quantidade de coligações com candidatos apresentados é igual
+#' nos dois bancos.
+#'  
+sum(coligacoes_df$CAND_APRES > 0) 
+
+sum(quanti_candi$CAND_APRES > 0)
 
 # 6. Gráficos -------------------------------------------------------------
 
 
+coligacoes_df %>% 
+  group_by(ANO_ELEICAO) %>% 
+  summarise(can_vaga = sum(CAND_APRES ) / sum(mag_df$Magnitude)) %>% 
+  ggplot(mapping = aes(x = ANO_ELEICAO, y = can_vaga)) +
+  geom_line(size = 2) +
+  theme_minimal()
+
+coligacoes_df %>% 
+  group_by(ANO_ELEICAO, SIGLA_UF) %>% 
+  summarise(cand = sum(CAND_APRES)) %>% 
+  left_join(mag_df) %>% 
+  mutate(can_vaga = cand / Magnitude) %>% 
+  ggplot(mapping = aes(x = reorder(SIGLA_UF, can_vaga),
+                       y = can_vaga,
+                       frame = ANO_ELEICAO)) +
+  geom_bar(stat = "identity", fill = "tomato") +
+  coord_flip() +
+  theme_minimal()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+coligacoes_df  %>% 
+  group_by(SIGLA_UF, ANO_ELEICAO) %>% 
+  summarise(pos = sum(CAND_POSSIVEIS),
+            apr = sum(CAND_APRES)) %>%
+  gather(pos:apr, key = "tipo", value = "quanti") %>% 
+  ggplot(mapping = aes(x = SIGLA_UF, y = quanti, color = tipo, shape = as.factor(ANO_ELEICAO))) +
+  geom_point() +
+  coord_flip()
