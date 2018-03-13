@@ -2,8 +2,6 @@ rm(list = ls())
 
 library(tidyverse)
 library(httr)
-library(rvest)
-
 
 # 1. Carregando Banco - Candidatos ----------------------------------------
 
@@ -56,7 +54,7 @@ candidatos_df <- bind_rows(candidatos_ls)
 candidatos_df <- candidatos_df %>% 
   filter(ANO_ELEICAO %in% c(2014, 2010, 2006))
 
-# 2. Carregando Banco - Legandas ------------------------------------------
+# 2. Carregando Banco - Legendas ------------------------------------------
 
 colunas <- c("DATA_GERACAO",
              "HORA_GERACAO",
@@ -114,6 +112,7 @@ legendas_df %>%
   count(TIPO_LEGENDA)
 
 legendas_df <- legendas_df %>% 
+  filter(ANO_ELEICAO %in% c(2014, 2010, 2006)) %>% 
   mutate(TIPO_LEGENDA = case_when(TIPO_LEGENDA == "PARTIDO ISOLADO" ~ "PARTIDO_ISOLADO",
                                   T                                 ~ TIPO_LEGENDA))
 
@@ -122,105 +121,220 @@ legendas_df %>%
 
 # 3. Consistência dos Dados -----------------------------------------------
 
-#'Verificando quais são os partidos com SEQUENCIAL_COLIGACAO e NOME_COLIGACAO %in% c("#NE#", "#NULO#")
-#'
-#' Aparenmente é possível agrupar por coligação mesmo quando o sequencial é inválido 
+rm(legendas_ls, candidatos_ls)
 
-col_teste <- legendas_df %>% 
-  group_by(TIPO_LEGENDA) %>% 
-  count(SEQUENCIAL_COLIGACAO, nome_valido = !(NOME_COLIGACAO %in% c("#NE#", "#NULO#")))
+#' Antes de criar um banco de dados das coligações vou criar um banco de dados dos partidos.
+#' Realizei isso em dois passos: 1) Criei um banco de partidos a partir do banco de legendas;
+#' 2) criei um banco de partidos a partir do banco de candidatos. Como nem todos os partidos lançam
+#' candidatos, utilizar o banco legendas é mais interessante. Porém, esse banco possui alguns problemas de 
+#' observações repetidas. O TSE não informa qual a legenda que de fato concorreu nas eleições. 
+#' Utilizei o banco de partidos provenientes do banco de candidatos para arrumar essa informação.
 
-col_teste %>% 
-  arrange(desc(n))
-
-col_teste %>% 
-  filter(!nome_valido)
-
-legendas_df %>% 
-  count(TIPO_LEGENDA, NOME_COLIGACAO) %>% 
-  arrange(desc(n))
-
-#' Aparenmente é possível criar grupos de coligações para todo o banco legendas_df
-#' a fim de mensurar a quantidade possível de candidatos em contraste com a apresentada
-
-#candidatos_df
-
-candidatos_df %>% 
-  count(NOME_COLIGACAO, SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO) %>% 
-  filter(NOME_COLIGACAO %in% c("#NE#", "PARTIDO ISOLADO"))
-
-#' Temos observações repetidas que só se diferem na variável SEQUENCIAL_COLIGACAO
-
-partidos_df <- legendas_df %>% 
-  select(SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA) %>% 
+partidos1_df <- legendas_df %>% 
+  select(SIGLA_PARTIDO, NOME_COLIGACAO, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA) %>% 
+  arrange(ANO_ELEICAO, SIGLA_UF) %>% 
   distinct()
 
-partidos_duplos_df <- legendas_df %>% 
-  count(SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA) %>%
-  select(-n) %>% 
-  count(SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO) %>% 
-  filter(n > 1) %>% 
-  select(-n)
+# Tentando entender o que a categoria #NE# correspode
+partidos1_df %>% 
+  count(NOME_COLIGACAO, TIPO_LEGENDA) %>% 
+  arrange(desc(n))
 
-legendas_df %>% 
-  inner_join(partidos_duplos_df) %>% 
-  select(SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA, NOME_COLIGACAO) %>% 
-  arrange(SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO) %>% 
-  print(n=37)
+partidos1_df %>% 
+  filter(NOME_COLIGACAO == "#NE#") %>% 
+  count(TIPO_LEGENDA)
 
-#' Temos problemas com o banco de dados de legendas do TSE. A duplicação de TIPO_LEGENDA
-#' para o mesmo partido, estado, ano dificulta a criação de um banco de Coligações. Vou 
-#' comparar as informações desses partidos com o banco de candidatos e tentar descobrir 
-#' se houve ou não coligação.
+#' Como essa categoria só possui TIPO_LEGENDA == PARTIDO_ISOLADO,
+#' vou transformar o #NE# no nome do partido para facilitar a criação
+#' de um banco de coligações.
 
-candidatos_df %>%
-  inner_join(partidos_duplos_df) %>% 
-  select(ANO_ELEICAO,NOME_CANDIDATO, DES_SITUACAO_CANDIDATURA, SIGLA_PARTIDO, SIGLA_UF, NOME_COLIGACAO) %>% 
-  count(ANO_ELEICAO, SIGLA_UF, SIGLA_PARTIDO, DEFERIDO = DES_SITUACAO_CANDIDATURA == "DEFERIDO") %>% 
-  arrange(SIGLA_UF, SIGLA_PARTIDO) %>% 
-  print(n = 25)
+partidos1_df <- partidos1_df %>% 
+  mutate(NOME_COLIGACAO = case_when(NOME_COLIGACAO == "#NE#" ~ SIGLA_PARTIDO,
+                                    T                        ~ NOME_COLIGACAO))
 
-#' Alguns partidos não tiveram candidado deferido. Mas esse não é o caso da maioria.
-#' Vou assumir que todos os partidos com duas categorias de TIPO_LEGENDA competiram
-#' coligados nas eleições
+#' Agora, eu explorei o banco de candidatos. Esse banco é essencial para
+#' a criação do banco coligações já que me permite comparar os resultados.
+#' Como eu só me interesso pelos candidatos que de fato concorreram, filtrei 
+#' o banco para os candidados DEFERIDOS.
 
-partidos_df <- partidos_df %>% 
-  anti_join(partidos_duplos_df %>% 
-              mutate(TIPO_LENGENDA = "PARTIDO_ISOLADO"))
-
-#
-candidatos_df <- candidatos_df %>% 
-  mutate(TIPO_LEGENDA = if_else(NOME_COLIGACAO %in% c("#NE#", "PARTIDO ISOLADO", NA), "PARTIDO_ISOLADO", "COLIGACAO"),
-         NOME_LEGENDA = if_else(TIPO_LEGENDA == "COLIGACAO", NOME_COLIGACAO, SIGLA_PARTIDO))
-  
 partidos2_df <- candidatos_df %>% 
   filter(DES_SITUACAO_CANDIDATURA == "DEFERIDO") %>% 
-  select(NOME_COLIGACAO, SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO,TIPO_LEGENDA, NOME_LEGENDA) %>% 
+  select(SIGLA_PARTIDO, NOME_COLIGACAO, SIGLA_UF, ANO_ELEICAO) %>% 
+  arrange(ANO_ELEICAO, SIGLA_UF, SIGLA_PARTIDO) %>% 
+  distinct()
+
+partidos2_df %>% 
+  count(NOME_COLIGACAO) %>% 
+  arrange(desc(n))
+
+#' Novamente, temos NOME_COLIGACAO == #NE#. 
+#' Vou verificar no banco de legendas para ver como esses partidos estão classificados.
+
+partidos2_NE <- partidos2_df %>% 
+  filter(NOME_COLIGACAO == "#NE#") %>% 
+  select(-NOME_COLIGACAO)
+
+partidos1_df %>% 
+  inner_join(partidos2_NE) 
+
+partidos1_df %>% 
+  inner_join(partidos2_NE) %>%
+  count(TIPO_LEGENDA)
+
+partidos1_df %>% 
+  inner_join(partidos2_NE) %>%
+  filter(TIPO_LEGENDA == "COLIGACAO")
+
+#' A maioria se classifica como PARTIDO_ISOLADO, mas 6 casos constam como coligação.
+#' A fim de verificar qual a situação desses partidos nas eleições de 2010, utilizei o 
+#' <http://eleicoes.terra.com.br/apuracao/2010/1turno/> e pesquisei um por um. Aparentemente,
+#' todos as 6 observações são de concorrência individual.
+#' 
+#' Tendo em vista isso, podemos assumir com certa segurança que os #NE# do NOME_COLIGACAO no
+#' banco de candidatos são de partidos que concorreram isoladamente. 
+
+partidos2_df <- partidos2_df %>% 
+  mutate(NOME_COLIGACAO = case_when(NOME_COLIGACAO %in% c("#NE#", "PARTIDO ISOLADO") ~ SIGLA_PARTIDO,
+                                    T                                                ~ NOME_COLIGACAO),
+         TIPO_LEGENDA   = case_when(SIGLA_PARTIDO == NOME_COLIGACAO ~ "PARTIDO_ISOLADO",
+                                    T                               ~ "COLIGACAO"))
+#' Verifiquei se há repetições de partidos nos dois bancos.
+
+partidos1_df %>% 
+  count(ANO_ELEICAO, SIGLA_UF, SIGLA_PARTIDO) %>% 
+  filter(n > 1)
+
+#' Temos bastantes observações que se repetem no banco proveniente das legendas
+
+partidos2_df %>% 
+  count(ANO_ELEICAO, SIGLA_UF, SIGLA_PARTIDO) %>% 
+  filter(n > 1)
+
+#' No banco proveniente dos candidatos temos apenas uma repetição. 
+#' Se olharmos especificamente vemos que provavelmente houve um erro
+#' na construção de banco de tal maneira que o NOME_COLIGACAO era um
+#' missing.
+
+partidos2_df %>% 
+  filter(ANO_ELEICAO   == 2010,
+         SIGLA_UF      == "MA",
+         SIGLA_PARTIDO == "PSL")
+
+candidatos_df %>% 
+  filter(DES_SITUACAO_CANDIDATURA == "DEFERIDO") %>% 
+  select(ANO_ELEICAO, SIGLA_UF, SIGLA_PARTIDO, NOME_COLIGACAO) %>% 
+  filter(ANO_ELEICAO   == 2010,
+         SIGLA_UF      == "MA",
+         SIGLA_PARTIDO == "PSL")
+
+partidos2_df <- partidos2_df %>% #Arrumando uma observação específica
+  mutate(NOME_COLIGACAO = case_when(ANO_ELEICAO == 2010 & SIGLA_UF == "MA" & SIGLA_PARTIDO == "PSL" ~ "O MARANHÃO NÃO PODE PARAR - F2",
+                                    T                                                               ~ NOME_COLIGACAO)) %>% 
+  distinct()
+
+partidos2_df %>% 
+  count(ANO_ELEICAO, SIGLA_UF, SIGLA_PARTIDO) %>% 
+  filter(n > 1)
+
+#' Agora, o banco partidos2_df não possui repetições. Resta arrumar o partidos1_df
+
+#' Primeiro, vou comparar o partidos1_df e o partidos2_df. Vou dar preferência para a classificação
+#' proveniente do partidos2_df já que, a princípio, ela foi a utilizada na eleição. 
+#' 
+#' Quando o NOME_COLIGACAO é NA no partidos2_df, significa que o partido não apresentou candidatos.
+#' Logo prevalece a classificação do partidos1_df. Caso sejam diferentes, prevalece a classificação do 
+#' partidos2_df. Por fim, se for igual, tanto faz e repete a classificação do partidos1_df.
+
+partidos_df <- partidos1_df %>% 
+  left_join(partidos2_df, by =  c("SIGLA_PARTIDO", "SIGLA_UF", "ANO_ELEICAO")) %>% 
+  mutate(TIPO_LEGENDA   = case_when(is.na(TIPO_LEGENDA.y)                ~ TIPO_LEGENDA.x,
+                                    TIPO_LEGENDA.x != TIPO_LEGENDA.y     ~ TIPO_LEGENDA.y,
+                                    T                                    ~ TIPO_LEGENDA.x),
+         NOME_LEGENDA = case_when(is.na(NOME_COLIGACAO.y)              ~ NOME_COLIGACAO.x,
+                                  NOME_COLIGACAO.x != NOME_COLIGACAO.y ~ NOME_COLIGACAO.y,
+                                  T                                    ~ NOME_COLIGACAO.x)) %>% 
+  select(-NOME_COLIGACAO.x, -NOME_COLIGACAO.y, -TIPO_LEGENDA.x, -TIPO_LEGENDA.y) %>% 
   distinct()
 
 partidos_df %>% 
-  count(TIPO_LEGENDA)
+  group_by(SIGLA_UF, ANO_ELEICAO) %>% 
+  count(NOME_LEGENDA)
 
-partidos2_df %>% 
-  count(TIPO_LEGENDA)
+#' Partidos que com classificação repetida, mas que não apresentaram candidatos nas coligações.
 
-#Casos diferentes
-partidos2_df %>% 
-  left_join(partidos_df, by = c("SIGLA_PARTIDO", "SIGLA_UF", "ANO_ELEICAO")) %>% 
-  filter(TIPO_LEGENDA.x != TIPO_LEGENDA.y)
+partidos_prob <- partidos_df %>% 
+  count(SIGLA_PARTIDO, SIGLA_UF,ANO_ELEICAO) %>% 
+  filter(n > 1) %>% 
+  select(-n)
 
-# 4. Banco das Coligações por Estado/Ano ----------------------------------
+partidos_class <- partidos_df %>% 
+  inner_join(partidos_prob)
 
-coligacoes_df <- partidos2_df %>% 
-  select(NOME_LEGENDA, SIGLA_UF, ANO_ELEICAO) %>% 
-  arrange(SIGLA_UF, ANO_ELEICAO, NOME_LEGENDA) %>% 
-  distinct()
+partidos_class$teste <- NA
 
-coligacoes_df %>% 
-  count(NOME_LEGENDA) %>% 
+#' A solução foi verificiar quais NOME_COLIGACAO estão presentes na SIGLA_UF ANO_ELEICAO do
+#' partidos2_df. Prevalece o NOME_COLIGACAO que estiver no partidos2_df.
+
+for(i in seq_along(partidos_class$teste)){
+  legendas <- partidos2_df$NOME_COLIGACAO[partidos2_df$ANO_ELEICAO == partidos_class$ANO_ELEICAO[i] & partidos2_df$SIGLA_UF == partidos_class$SIGLA_UF[i]]
+
+  partidos_class$teste[i] <- partidos_class$NOME_LEGENDA[i] %in% legendas
+}
+
+partidos_class %>% 
+  filter(teste)
+
+#' Retirei as observações que não bateram do partidos_df
+
+partidos_df <- partidos_df %>% 
+  anti_join(partidos_class %>% 
+               filter(!teste))
+
+#' Verificação final para ver se há repetição de partidos em partidos_df
+partidos_df %>% 
+  count(SIGLA_PARTIDO, SIGLA_UF, ANO_ELEICAO) %>% 
   filter(n > 1)
 
-candidatos_ap_df <- candidatos_df %>% 
-  filter(DES_SITUACAO_CANDIDATURA == "DEFERIDO") %>% 
-  count(NOME_LEGENDA, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA)
+# 4. Criando banco de Coligações ------------------------------------------
+
+coligacoes_df <- partidos_df %>% 
+  select(NOME_LEGENDA, SIGLA_UF, ANO_ELEICAO, TIPO_LEGENDA) %>% 
+  distinct()
+
+# 5. Candidatos disponíveis por distrito ----------------------------------
+
+mag_df <- readxl::read_xlsx("Magnitude_UF.xlsx") %>% 
+  rename(SIGLA_UF = UF)
+
+coligacoes_df <- coligacoes_df %>% 
+  left_join(mag_df) %>% 
+  mutate(possiveis = case_when(TIPO_LEGENDA == "COLIGACAO"       & Magnitude >= 19 ~ Magnitude * 2,
+                               TIPO_LEGENDA == "COLIGACAO"       & Magnitude <  19 ~ Magnitude * 3,
+                               TIPO_LEGENDA == "PARTIDO_ISOLADO" & Magnitude >= 19 ~ Magnitude * 1.5,
+                               TIPO_LEGENDA == "PARTIDO_ISOLADO" & Magnitude <  19 ~ Magnitude * 2))
+
+
+# 6. Gráficos -------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
