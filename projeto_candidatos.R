@@ -360,28 +360,52 @@ coligacoes_df %>%
   group_by(ANO_ELEICAO) %>% 
   summarise(can_vaga = sum(CAND_APRES ) / sum(mag_df$Magnitude)) %>% 
   ggplot(mapping = aes(x = ANO_ELEICAO, y = can_vaga)) +
-  geom_line(size = 2) +
-  theme_minimal()
-
-coligacoes_df %>% 
-  group_by(ANO_ELEICAO, SIGLA_UF) %>% 
-  summarise(cand = sum(CAND_APRES)) %>% 
-  left_join(mag_df) %>% 
-  mutate(can_vaga = cand / Magnitude) %>% 
-  ggplot(mapping = aes(x = reorder(SIGLA_UF, can_vaga),
-                       y = can_vaga,
-                       frame = ANO_ELEICAO)) +
-  geom_bar(stat = "identity", fill = "tomato") +
-  coord_flip() +
-  theme_minimal()
+  geom_line(color = "tomato3", size = 2) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  scale_x_continuous(breaks = c(1998, 2002, 2006, 2010, 2014))
 
 
+for(i in seq(0, 12, by = 4)){
+  dupla_ano = c(1998, 2002)
+  
+  dupla_ano = dupla_ano + i
+  
+  coligacoes_df %>% 
+    group_by(ANO_ELEICAO, SIGLA_UF) %>% 
+    summarise(cand = sum(CAND_APRES)) %>% 
+    left_join(mag_df) %>%
+    group_by(SIGLA_UF) %>%
+    mutate(can_vaga = cand / Magnitude,
+           can_vaga1 = lag(can_vaga),
+           maior     = case_when(can_vaga > can_vaga1 ~ T,
+                                 can_vaga < can_vaga1 ~ F)) %>%
+    ungroup() %>% 
+    mutate(SIGLA_UF = reorder(SIGLA_UF, can_vaga)) %>% 
+    filter(ANO_ELEICAO %in% dupla_ano) %>%
+    ggplot() +
+    geom_segment(aes(x    = SIGLA_UF,
+                     xend = SIGLA_UF,
+                     y    = 2,
+                     yend = 20),
+                 linetype= "dashed", 
+                 size    = 0.1) +
+    geom_line(aes(group = SIGLA_UF,
+                  x = SIGLA_UF,
+                  y = can_vaga,
+                  color = maior),
+              size = 4,
+              alpha = 0.4) +
+    geom_point(aes(x = SIGLA_UF,
+                   y = can_vaga,
+                   color = as.factor(ANO_ELEICAO)),
+               stat = "identity",
+               size = 4) +
+    coord_flip() +
+    scale_y_continuous(limits = c(2, 20), breaks = seq(2,20, by = 2)) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+  
+  ggsave(str_c("cand_vaga", str_c(dupla_ano, collapse = "-"), ".png"))
+}
 
-coligacoes_df  %>% 
-  group_by(SIGLA_UF, ANO_ELEICAO) %>% 
-  summarise(pos = sum(CAND_POSSIVEIS),
-            apr = sum(CAND_APRES)) %>%
-  gather(pos:apr, key = "tipo", value = "quanti") %>% 
-  ggplot(mapping = aes(x = SIGLA_UF, y = quanti, color = tipo, shape = as.factor(ANO_ELEICAO))) +
-  geom_point() +
-  coord_flip()
