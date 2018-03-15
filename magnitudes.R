@@ -1,5 +1,3 @@
-rm(list = ls())
-
 library(tidyverse)
 
 base_url <- "http://agencia.tse.jus.br/estatistica/sead/odsele/consulta_vagas/consulta_vagas_ANO.zip"
@@ -31,14 +29,34 @@ vagas_df <- bind_rows(vagas_ls)
 vagas_df <- vagas_df %>% 
   rename(data    = X1,
          hora    = X2,
-         ano     = X3,
+         ANO_ELEICAO     = X3,
          eleicao = X4,
-         uf      = X5,
-         uf      = X6,
+         SIGLA_UF      = X5,
+         uf_2    = X6,
          nome_uf = X7,
          x8      = X8,
          cargo   = X9,
          vagas   = X10)
+
+vagas_df %>% 
+  count(eleicao)
+
+vagas_df %>% 
+  count(cargo)
+
+vagas_df <- vagas_df %>% 
+  mutate(cargo = str_to_upper(cargo))
+
+vagas_df %>% 
+  count(cargo)
+
+vagas_df %>% 
+  count(ANO_ELEICAO)
+
+vagas_df %>% 
+  count(SIGLA_UF) %>% 
+  count(SIGLA_UF) %>% 
+  filter(nn > 1)
 
 write_csv(vagas_df, "magnitudes.csv")
 
