@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"6";"Deputado Federal";"18"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"7";"Deputado Estadual";"42"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MA";"MA";"MARANHÃO";"10";"2º Suplente";"1"

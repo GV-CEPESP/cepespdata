@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"6";"Deputado Federal";"17"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"7";"Deputado Estadual";"41"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"GO";"GO";"GOIÁS";"10";"2º Suplente";"1"

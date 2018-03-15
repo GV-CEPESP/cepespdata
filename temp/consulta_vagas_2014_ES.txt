@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"6";"Deputado Federal";"10"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"7";"Deputado Estadual";"30"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"ES";"ES";"ESPÍRITO SANTO";"10";"2º Suplente";"1"

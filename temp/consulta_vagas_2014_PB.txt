@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"6";"Deputado Federal";"12"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"7";"Deputado Estadual";"36"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PB";"PB";"PARAÍBA";"10";"2º Suplente";"1"

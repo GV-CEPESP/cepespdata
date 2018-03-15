@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"6";"Deputado Federal";"25"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"7";"Deputado Estadual";"49"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"PE";"PE";"PERNAMBUCO";"10";"2º Suplente";"1"

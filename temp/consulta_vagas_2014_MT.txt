@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"6";"Deputado Federal";"8"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"7";"Deputado Estadual";"24"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MT";"MT";"MATO GROSSO";"10";"2º Suplente";"1"

@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"6";"Deputado Federal";"53"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"7";"Deputado Estadual";"77"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"MG";"MG";"MINAS GERAIS";"10";"2º Suplente";"1"

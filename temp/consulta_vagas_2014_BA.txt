@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"6";"Deputado Federal";"39"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"7";"Deputado Estadual";"63"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"BA";"BA";"BAHIA";"10";"2º Suplente";"1"

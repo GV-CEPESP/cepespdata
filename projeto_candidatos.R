@@ -314,8 +314,9 @@ coligacoes_df %>%
 # 5. Candidatos disponíveis por distrito ----------------------------------
 
 # Banco com as magnitudes
-mag_df <- readxl::read_xlsx("Magnitude_UF.xlsx") %>% 
-  rename(SIGLA_UF = UF)
+# source("magnitudes.R")
+
+mag_df <- read_csv("magnitudes.csv")
 
 #' Criação do quantidade possível de candidatos por coligação
 coligacoes_df <- coligacoes_df %>% 

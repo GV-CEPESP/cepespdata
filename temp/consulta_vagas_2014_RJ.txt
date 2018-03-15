@@ -1,0 +1,7 @@
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"3";"Governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"4";"Vice-governador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"5";"Senador";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"6";"Deputado Federal";"46"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"7";"Deputado Estadual";"70"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"9";"1º Suplente";"1"
+"11/03/2018";"03:02:46";"2014";"Eleições Gerais 2014";"RJ";"RJ";"RIO DE JANEIRO";"10";"2º Suplente";"1"
