@@ -391,6 +391,13 @@ coligacoes_df %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
+coligacoes_df %>% 
+  mutate(freq = CAND_APRES / CAND_POSSIVEIS) %>% 
+  filter(ANO_ELEICAO == 2014, SIGLA_UF == "SP") %>% 
+  ggplot(mapping = aes(x = reorder(NOME_LEGENDA, freq), y = freq)) +
+  geom_point() +
+  coord_flip()
+
 
 for(i in seq(0, 12, by = 4)){
   dupla_ano = c(1998, 2002)

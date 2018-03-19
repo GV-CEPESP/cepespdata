@@ -2,6 +2,8 @@ rm(list = ls())
 
 library(tidyverse)
 library(httr)
+library(rgdal)
+library(ggthemes)
 
 # 1. Carregando Banco -----------------------------------------------------
 
@@ -12,74 +14,8 @@ cargos <- c(1,3,5,6,7,8,11,13)
 colunas <- c("ANO_ELEICAO",
              "NUM_TURNO",
              "DESCRICAO_ELEICAO",
-             "NOME_UF",
-             "CODIGO_CARGO",
-             "NOME_CANDIDATO",
-             "DES_SITUACAO_CANDIDATURA",
-             "NUMERO_PARTIDO",
-             "SIGLA_PARTIDO",
-             "CODIGO_LEGENDA",
-             "SIGLA_LEGENDA",
-             "COMPOSICAO_LEGENDA",
-             "NOME_COLIGACAO",
-             "CODIGO_OCUPACAO",
-             "DESCRICAO_OCUPACAO",
-             "IDADE_DATA_ELEICAO",
-             "CODIGO_SEXO",
-             "DESCRICAO_SEXO",
-             "COD_GRAU_INSTRUCAO",
-             "DESCRICAO_GRAU_INSTRUCAO",
-             "CODIGO_ESTADO_CIVIL",
-             "DESCRICAO_ESTADO_CIVIL",
-             "CODIGO_COR_RACA",
-             "DESCRICAO_COR_RACA",
-             "QTDE_VOTOS",
-             "TIPO_LEGENDA",
-             "DESC_SIT_TOT_TURNO")
-
-get_eleicao <- function(ano, cargo, agreg_reg, agreg_pol, colunas){
-  url_base <- "http://cepesp.io/api/consulta/tse"
-  
-  params <- list(
-    `cargo`              = cargo,
-    `ano`                = ano,
-    `agregacao_regional` = agreg_reg,
-    `agregacao_politica` = agreg_pol,
-    `brancos`            = 1,
-    `nulos`              = 1)
-  
-  for(coluna in colunas){
-    i = length(params) + 1
-    
-    params[[i]] <- coluna
-    
-    names(params)[i] <- "selected_columns[]"
-  }
-  
-  data_frame <- GET(url_base, query = params) %>% 
-    content(type = "text/csv")
-}
-
-eleicao_ls <- lst()
-
-for(ano in anos){
-  i = length(eleicao_ls) + 1
-  
-  eleicao_ls[[i]] <- get_eleicao(ano,agreg_reg = 2, agreg_pol = 2, cargo = 6, colunas = colunas)
-}
-
-for(i in seq_along(eleicao_ls)){
-  eleicao_ls[[i]] <- eleicao_ls[[i]] %>% 
-    mutate(CODIGO_LEGENDA = parse_character(CODIGO_LEGENDA))
-}
-
-eleicao_df <- bind_rows(eleicao_ls)
-
-
-colunas <- c("ANO_ELEICAO",
-             "NUM_TURNO",
-             "DESCRICAO_ELEICAO",
              "SIGLA_UF",
+             "DESCRICAO_UE",
              "NOME_CANDIDATO",
              "DES_SITUACAO_CANDIDATURA",
              "NUMERO_PARTIDO",
@@ -173,7 +109,33 @@ nep_nacional <- eleicao_nacional %>%
   summarise(NEP = 1 / sum(freq^2))
 
 
-
+brasil@data %>% 
+  left_join(nep_ufs %>% 
+              filter(ANO_ELEICAO == 2014), by = c("NM_ESTADO" = "DESCRICAO_UE"))
 # 4. Gráficos -------------------------------------------------------------
 
-  
+brasil <- readOGR("[SP]Brasil", "Brasil", encoding = "UTF-8")
+
+plot(brasil)
+
+brasil_pl <- fortify(brasil)
+
+brasil_pl %>% 
+  count(id) %>% 
+  print(n = Inf)
+
+brasil_df <- brasil@data
+
+brasil_df$id <- as.character(0:26) 
+
+brasil_df <- brasil_df %>% 
+  left_join(nep_ufs %>% filter(ANO_ELEICAO == 2014), by = c("UF" = "SIGLA_UF"))
+
+brasil_pl <- brasil_pl %>% 
+  left_join(brasil_df)
+
+brasil_pl %>% 
+  ggplot(mapping = aes(x = long, y = lat, gruop = group, fill = NEP)) +
+  geom_polygon(color = "white") +
+  coord_map() +
+  theme_map()
