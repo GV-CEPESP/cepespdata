@@ -3,16 +3,6 @@ rm(list = ls())
 library(tidyverse)
 library(httr)
 
-anos <- c(seq(1998, 2016, by = 2))
-
-cargos <- c(1,3,5,6,7,8,11,13)
-
-args_candi <- expand.grid(anos, cargos)
-
-args_candi <- args_candi %>% 
-  filter((anos %in% seq(2000, 2016, by = 4) & (Var2 %in% c(11, 13))) |
-           (anos %in% seq(1998, 2014, by = 4) & !(Var2 %in% c(11,13))))
-
 # 1. Carregando Banco - Candidatos ----------------------------------------
 
 colunas <- c("ANO_ELEICAO",
@@ -37,8 +27,6 @@ colunas <- c("ANO_ELEICAO",
              "DESCRICAO_ESTADO_CIVIL")
 
 get_candidato <- function(ano, cargo, colunas){
-  message(str_c("Lendo", ano, cargo, sep = " "))
-  
   url_base <- "http://cepesp.io/api/consulta/candidatos"
   
   params <- list(
@@ -57,8 +45,23 @@ get_candidato <- function(ano, cargo, colunas){
     content(type = "text/csv")
 }
 
-candidatos_ls <- map2(args_candi$Var1, args_candi$Var2, ~get_candidato(ano = .x, cargo = .y, colunas = colunas) %>% 
-                        mutate(cargo = .y))
+for(ano in anos){
+  for(cargo in cargos){
+    i = length(candidatos_ls) + 1
+    
+    candidatos_ls[[i]] <- get_candidato(ano, cargo = cargo, colunas)
+    
+    candidatos_ls[[i]] <- candidatos_ls[[i]] %>% 
+      mutate(cargo = cargo)
+  }
+}
+
+for(i in seq_along(candidatos_ls)){
+  candidatos_ls[[i]] <- candidatos_ls[[i]] %>%
+    mutate(CPF_CANDIDATO = parse_character(CPF_CANDIDATO),
+           SIGLA_LEGENDA = parse_character(SIGLA_LEGENDA),
+           NUM_TITULO_ELEITORAL_CANDIDATO = parse_character(NUM_TITULO_ELEITORAL_CANDIDATO))
+}
 
 candidatos_df <- bind_rows(candidatos_ls)
 
@@ -108,7 +111,8 @@ legendas_ls <- map2(args_candi$Var1, args_candi$Var2, ~get_legenda(ano = .x, car
 
 for(i in seq_along(legendas_ls)){
   legendas_ls[[i]] <- legendas_ls[[i]] %>% 
-    mutate(SIGLA_UE = parse_character(SIGLA_UE))
+    mutate(SIGLA_UE = parse_character(SIGLA_UE),
+           SEQUENCIAL_COLIGACAO = parse_character(SEQUENCIAL_COLIGACAO))
 }
 
 legendas_df <- bind_rows(legendas_ls)
@@ -126,8 +130,3 @@ legendas_df %>%
 write_rds(legendas_df, "legendas.rds")
 
 rm(legendas_ls, candidatos_ls)
-
-
-# 3. Carrengado Banco - Votos ---------------------------------------------
-
-
