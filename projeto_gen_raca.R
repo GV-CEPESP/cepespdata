@@ -31,7 +31,8 @@ colunas <- c("ANO_ELEICAO",
              "COD_GRAU_INSTRUCAO",
              "DESCRICAO_GRAU_INSTRUCAO",
              "CODIGO_COR_RACA",
-             "DESCRICAO_COR_RACA")
+             "DESCRICAO_COR_RACA",
+             "DESPESA_MAX_CAMPANHA")
 
 get_candidato <- function(ano, cargo, colunas){
   url_base <- "http://cepesp.io/api/consulta/candidatos"
@@ -88,6 +89,20 @@ candidatos_df %>%
 candidatos_df %>% 
   ggplot(mapping = aes(ANO_ELEICAO, fill = DESCRICAO_COR_RACA)) +
   geom_bar()
+
+candidatos_df %>% 
+  count(DESPESA_MAX_CAMPANHA)
+
+candidatos_df <- candidatos_df %>% 
+  mutate(DESPESA_MAX_CAMPANHA = ifelse(DESPESA_MAX_CAMPANHA == -1, NA, DESPESA_MAX_CAMPANHA))
+
+candidatos_df %>% 
+  ggplot(mapping = aes(x = DESPESA_MAX_CAMPANHA)) +
+  geom_histogram()
+
+candidatos_df %>% 
+  count(DESPESA_MAX_CAMPANHA) %>% 
+  arrange(desc(DESPESA_MAX_CAMPANHA))
 
 # 3. Gráficos -------------------------------------------------------------
 candidatos_df %>% 
