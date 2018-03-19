@@ -119,16 +119,6 @@ legendas_df %>%
 
 rm(legendas_ls, candidatos_ls)
 
-legendas_df <- read_rds("legendas.rds")
-
-legendas_df <- legendas_df %>% 
-  filter(CODIGO_CARGO == 6)
-
-candidatos_df <- read_rds("candidatos.csv")
-
-candidatos_df <- candidatos_df %>% 
-  filter(cargo == 6)
-
 # 3. Consistência dos Dados -----------------------------------------------
 
 #' Antes de criar um banco de dados das coligações vou criar um banco de dados dos partidos.
