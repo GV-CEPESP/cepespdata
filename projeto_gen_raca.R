@@ -283,3 +283,6 @@ candidatos_df %>%
   ggplot(mapping = aes(x = prop_m, y = votos)) +
   geom_point()
 
+# 4. Mapas ----------------------------------------------------------------
+
+brasil <- readOGR("[SP]Brasil/", "BRASIL")
