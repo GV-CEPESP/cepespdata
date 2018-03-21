@@ -2,13 +2,11 @@ rm(list = ls())
 
 library(tidyverse)
 library(httr)
-library(genderBR)
+library(rgdal)
 
 # 1. Carregando Bancos ----------------------------------------------------
 
 anos <- c(seq(1998, 2014, by = 4))
-
-args <- expand.grid()
 
 colunas <- c("ANO_ELEICAO",
              "NUM_TURNO",
@@ -181,14 +179,17 @@ candidatos_df %>%
 
 # 3. Gráficos -------------------------------------------------------------
 
+c_quali <- c("#8dd3c7", "#bc80bd")
+
 candidatos_df %>% 
   filter(!is.na(sexo)) %>% 
-  ggplot(mapping = aes(x = ANO_ELEICAO, fill = sexo)) +
+  ggplot(mapping = aes(x = ANO_ELEICAO, fill = fct_relevel(sexo, "Homens"))) +
   geom_bar(position = "fill") +
   geom_hline(yintercept = 0.5) +
   scale_x_continuous(breaks = anos) +
   theme_minimal() +
   theme(legend.position = "bottom") +
+  scale_fill_manual(values = c_quali) +
   labs(title = "Candidatos em função de sexo",
        fill = "Sexo",
        x = "Ano",
@@ -199,17 +200,22 @@ for(ano in anos){
     filter(ANO_ELEICAO == ano) %>% 
     group_by(SIGLA_PARTIDO, ANO_ELEICAO) %>% 
     summarise(n   = n(),
-              fem = sum(sexo == "Mulheres", na.rm = T),
-              mas = sum(sexo == "Homens", na.rm = T)) %>% 
+              mas = sum(sexo == "Homens", na.rm = T),
+              fem = sum(sexo == "Mulheres", na.rm = T)) %>% 
     mutate(prop_m = fem/n) %>%
     gather(fem:mas, key = "gen", value = "quanti") %>% 
-    ggplot(mapping = aes(x = reorder(SIGLA_PARTIDO, prop_m), y = quanti, fill = gen)) +
+    ggplot(mapping = aes(x = reorder(SIGLA_PARTIDO, prop_m), y = quanti, fill = fct_relevel(gen, "mas"))) +
     geom_bar(stat = "identity", position = "fill") +
     geom_hline(yintercept = 0.5) +
+    geom_hline(yintercept = 0.3,
+               size = 1.5) +
     coord_flip() +
     theme_minimal() +
     theme(legend.position = "bottom") +
-    scale_fill_discrete(labels = c("Mulheres", "Homens")) +
+    scale_fill_manual(values = c_quali,
+                      labels = c("Homens", "Mulheres")) +
+    scale_y_continuous(labels = c("0%", "25%", "50%", "75%", "100%")) +
+    guides(fill = guide_legend(reverse = T)) +
     labs(title = str_c("Proporção de Homens e Mulheres por Partido: ", ano),
          fill = "Sexo",
          x = "Partido",
@@ -283,6 +289,12 @@ candidatos_df %>%
   ggplot(mapping = aes(x = prop_m, y = votos)) +
   geom_point()
 
+candidatos_df %>% 
+  filter(DESPESA_MAX_CAMPANHA != -1) %>% 
+  filter(DESPESA_MAX_CAMPANHA < 10000) %>% 
+  ggplot(mapping = aes(x = DESPESA_MAX_CAMPANHA, y = QTDE_VOTOS)) +
+  geom_point()
+
 # 4. Mapas ----------------------------------------------------------------
 
-brasil <- readOGR("[SP]Brasil/", "BRASIL")
+brasil <- readOGR("[SP]Brasil", "Brasil")
