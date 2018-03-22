@@ -3,10 +3,17 @@ rm(list = ls())
 library(tidyverse)
 library(httr)
 library(rgdal)
+source("FUN.R")
 
 # 1. Carregando Bancos ----------------------------------------------------
 
 anos <- c(seq(1998, 2014, by = 4))
+
+cargos <- 6
+
+arg <- expand.grid(cargos,anos)
+
+##1.1. Banco de Candidatos
 
 colunas <- c("ANO_ELEICAO",
              "NUM_TURNO",
@@ -31,66 +38,26 @@ colunas <- c("ANO_ELEICAO",
              "DESCRICAO_COR_RACA",
              "DESPESA_MAX_CAMPANHA")
 
-get_candidato <- function(ano, cargo, colunas){
-  url_base <- "http://cepesp.io/api/consulta/candidatos"
-  
-  params <- list(
-    `cargo`              = cargo,
-    `ano`                = ano)
-  
-  for(coluna in colunas){
-    i = length(params) + 1
-    
-    params[[i]] <- coluna
-    
-    names(params)[i] <- "selected_columns[]"
-  }
-  
-  data_frame <- GET(url_base, query = params) %>% 
-    content(type = "text/csv")
-}
+candidatos_ls <- map2(arg$Var1, arg$Var2, ~get_candidatos(cargo = .x, ano = .y, colunas = colunas))
 
-candidatos_ls <- lst()
-
-for(ano in anos){
-  i = length(candidatos_ls) + 1
-  
-  candidatos_ls[[i]] <- get_candidato(ano, cargo = 6, colunas)
-}
-
-for(i in seq_along(candidatos_ls)){
-  candidatos_ls[[i]] <- candidatos_ls[[i]] %>% 
-    mutate(NUM_TITULO_ELEITORAL_CANDIDATO = parse_character(NUM_TITULO_ELEITORAL_CANDIDATO))
-}
+candidatos_ls <- map(candidatos_ls, ~mutate(.data = .x,
+                                            NUM_TITULO_ELEITORAL_CANDIDATO = parse_character(NUM_TITULO_ELEITORAL_CANDIDATO)))
 
 candidatos_df <- bind_rows(candidatos_ls)
 
-get_voto <- function(ano){
-  url_base <- "http://cepesp.io/api/consulta/tse"
-  
-  params <- list(
-    `cargo`              = 6,
-    `ano`                = ano,
-    `agregacao_regional` = 2,
-    `agregacao_politica` = 2,
-    `selected_columns[]`   = "ANO_ELEICAO",
-    `selected_columns[]`   = "NUM_TITULO_ELEITORAL_CANDIDATO",
-    `selected_columns[]`   = "UF",
-    `selected_columns[]`   = "QTDE_VOTOS")
-  
-  data_frame <- GET(url_base, query = params) %>% 
-    content(type = "text/csv")
-}
+##1.2. Banco de Votos
 
-votos_ls <- lst()
+colunas <- c(
+  "ANO_ELEICAO",
+  "NUM_TITULO_ELEITORAL_CANDIDATO",
+  "UF",
+  "QTDE_VOTOS")
 
-for(ano in anos){
-  i = length(votos_ls) + 1
-  
-  votos_ls[[i]] <- get_voto(ano)
-}
+votos_ls <- map2(arg$Var1, arg$Var2, ~get_votos(cargo = .x, ano = .y, agre_pol = 2, agre_reg = 2, colunas = colunas))
 
 votos_df <- bind_rows(votos_ls)
+
+rm(candidatos_ls, votos_ls)
 
 # 2. Criando Variáveis ----------------------------------------------------
 
@@ -221,7 +188,7 @@ for(ano in anos){
          x = "Partido",
          y = "Proporção")
   
-  ggsave(str_c("diff_gen_", ano,".png"), width = 8.0, height = 5.0)
+  ggsave(str_c("projeto_gen_raca/", ano, ".png"), width = 8.0, height = 5.0)
 }
 
 candidatos_df %>% 
@@ -247,7 +214,7 @@ candidatos_df %>%
        y = "Proporção",
        fill = "Cor/Raça")
   
-ggsave("diff_rac.png", width = 8.0, height = 5.0)
+ggsave("projeto_gen_raca/diff_rac.png", width = 8.0, height = 5.0)
 
 candidatos_df %>% 
   filter(!is.na(escolaridade)) %>% 

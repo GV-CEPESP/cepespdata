@@ -316,7 +316,7 @@ coligacoes_df %>%
 # 5. Candidatos disponíveis por distrito ----------------------------------
 
 # Banco com as magnitudes
-# source("magnitudes.R")
+# source("baixa_magnitudes.R")
 
 mag_df <- read_csv("magnitudes.csv")
 
