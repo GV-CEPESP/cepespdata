@@ -2,6 +2,8 @@ rm(list = ls())
 
 library(tidyverse)
 library(httr)
+library(rgdal)
+library(ggthemes)
 source("FUN.R")
 
 # 1. Download Banco de Dados ----------------------------------------------
@@ -147,6 +149,13 @@ candidatos_df <- candidatos_df %>%
 candidatos_df <- candidatos_df %>% 
   filter(eleicao_atual == TRUE)
 
+candidatos_df %>% 
+  count(INCUMBENTE)
+
+candidatos_df %>% 
+  filter(ELEITO == T) %>% 
+  count(INCUMBENTE)
+
 rm(serie_longa)
 
 # 3. Gráficos -------------------------------------------------------------
@@ -163,4 +172,53 @@ candidatos_df %>%
   ggplot(mapping = aes(x = ANO_ELEICAO, fill = CAND_NOVO)) +
   geom_bar(position = "fill") +
   scale_x_continuous(breaks = anos)
+
+candidatos_df %>% 
+  filter(ANO_ELEICAO == 2014) %>% 
+  filter(ELEITO == T) %>% 
+  ggplot(mapping = aes(x = SIGLA_PARTIDO, fill = INCUMBENTE)) +
+  geom_bar(position = "fill") +
+  coord_flip()
+
+
+# 4. Mapas ----------------------------------------------------------------
+
+## Base para mapas
+
+brasil <- readOGR("[SP]Brasil", 'Brasil')
+
+brasil_df <- brasil@data
+
+brasil_df$id <- 0:26
+
+brasil_pl <- fortify(brasil)
+
+brasil_pl$id <- as.integer(brasil_pl$id)
+
+##
+
+dados_renovacao_df <- candidatos_df %>% 
+  filter(ELEITO == T) %>% 
+  filter(ANO_ELEICAO > 1998) %>% 
+  group_by(ANO_ELEICAO, SIGLA_UF) %>% 
+  summarise(n = n(),
+            INCUMBENTE = sum(INCUMBENTE == T)) %>% 
+  mutate(taxa_renovacao = 1 - (INCUMBENTE / n))
+
+dados_renovacao_mapa_df <- brasil_df %>% 
+  left_join(dados_renovacao_df, by = c("UF" = "SIGLA_UF"))
+
+for(ano in anos[-1]){
+  dados_uso <- dados_renovacao_mapa_df %>% 
+    filter(ANO_ELEICAO == ano)
+  
+  brasil_pl %>% 
+    left_join(dados_uso) %>% 
+    ggplot(mapping = aes(x = long, y = lat, group = group, fill = taxa_renovacao)) +
+    geom_polygon(color = "white") +
+    coord_map() +
+    theme_map()
+  
+  ggsave(str_c("projeto_renovacao/", ano, ".png"), height = 8.0, width = 8.0)
+}
 
