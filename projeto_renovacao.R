@@ -106,7 +106,21 @@ candidatos_df <- candidatos_df %>%
   filter(!is.na(NUM_TITULO_ELEITORAL_CANDIDATO)) %>% 
   filter(NUM_TITULO_ELEITORAL_CANDIDATO != 29427820370)
 
-##2.4. Criação da variável de duas variáveis: 1) Concorreu na eleição passada; 2) Incumbente
+##2.4. Quantidade de vezes concorridas
+
+candidatos_df <- candidatos_df %>% 
+  group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>%
+  mutate(CONC_VEZES = 1,
+         CONC_VEZES = cumsum(CONC_VEZES),
+         CAND_NOVO = ifelse(CONC_VEZES == 1, T, F)) %>% 
+  ungroup()
+
+candidatos_df %>% 
+  count(CONC_VEZES) %>% 
+  filter(n > 5)
+
+##2.5. Criação da variável de duas variáveis: 1) Concorreu na eleição passada; 2) Incumbente
 
 serie_longa <- candidatos_df %>% 
   mutate(eleicao_atual = T) %>% 
@@ -138,5 +152,15 @@ rm(serie_longa)
 # 3. Gráficos -------------------------------------------------------------
 
 candidatos_df %>% 
+  filter(ELEITO == T) %>% 
+  filter(ANO_ELEICAO > 1998) %>% 
   ggplot(mapping = aes(x = ANO_ELEICAO, fill = INCUMBENTE)) +
-  geom_bar(position = "fill")
+  geom_bar(position = "fill") +
+  scale_x_continuous(breaks = anos)
+
+candidatos_df %>% 
+  filter(ANO_ELEICAO > 1998) %>% 
+  ggplot(mapping = aes(x = ANO_ELEICAO, fill = CAND_NOVO)) +
+  geom_bar(position = "fill") +
+  scale_x_continuous(breaks = anos)
+
