@@ -150,8 +150,10 @@ c_quali <- c("#8dd3c7", "#bc80bd")
 
 candidatos_df %>% 
   filter(!is.na(sexo)) %>% 
-  ggplot(mapping = aes(x = ANO_ELEICAO, fill = fct_relevel(sexo, "Homens"))) +
-  geom_bar(position = "fill") +
+  group_by(ANO_ELEICAO) %>% 
+  count(sexo) %>% 
+  ggplot(mapping = aes(x = ANO_ELEICAO, y= n, fill = fct_relevel(sexo, "Homens"))) +
+  geom_area(position = "fill") +
   geom_hline(yintercept = 0.5) +
   scale_x_continuous(breaks = anos) +
   theme_minimal() +
@@ -161,7 +163,30 @@ candidatos_df %>%
        fill = "Sexo",
        x = "Ano",
        y = "Proporção")
-  
+
+candidatos_df %>% 
+  filter(ANO_ELEICAO == 2014) %>% 
+  group_by(SIGLA_PARTIDO) %>% 
+  summarise(PPI   = sum(raca %in% c("Indígena", "Parda", "Preta")),
+            mulher = sum(sexo == "Mulheres"),
+            n      = n()) %>% 
+  mutate(prop_PPI = PPI / n,
+         prop_mu  = mulher/n) %>% 
+  ggplot(mapping = aes(x = prop_PPI, prop_mu, label = SIGLA_PARTIDO)) +
+  geom_label(color = "white", fill = "black", alpha = 0.3) +
+  theme_minimal() +
+  labs(x = "Proporção de PPI (Pretos, Pardos e Indígenas)",
+       y = "Proporção de Mulheres",
+       title = "Distribuição de Raça e Sexo entre os candidatos à Deputado Federal - 2014")
+
+ggsave("projeto_gen_raca/raca_sexo_dep_fed.png", height = 8.0, width = 8.0)
+
+candidatos_df %>% 
+  group_by(ANO_ELEICAO) %>% 
+  count(DESCRICAO_GRAU_INSTRUCAO) %>% 
+  ggplot(mapping = aes(x = ANO_ELEICAO, y = n, fill = DESCRICAO_GRAU_INSTRUCAO)) +
+  geom_area(position = "fill")
+
 for(ano in anos){
   candidatos_df %>% 
     filter(ANO_ELEICAO == ano) %>% 
