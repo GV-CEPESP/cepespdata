@@ -439,6 +439,6 @@ for(i in seq(0, 12, by = 4)){
     theme_minimal() +
     theme(legend.position = "bottom")
   
-  ggsave(str_c("cand_vaga", str_c(dupla_ano, collapse = "-"), ".png"))
+  ggsave(str_c("projeto_magnitude/cand_vaga", str_c(dupla_ano, collapse = "-"), ".png"))
 }
 

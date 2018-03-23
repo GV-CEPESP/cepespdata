@@ -8,7 +8,7 @@ source("FUN.R")
 
 # 1. Download Banco de Dados ----------------------------------------------
 
-cargos = 6
+cargos = c(3, 5, 6, 7)
 
 anos   = seq(1998, 2014, by = 4)
 
@@ -19,6 +19,8 @@ variaveis <- c("ANO_ELEICAO",
                "NUM_TITULO_ELEITORAL_CANDIDATO",
                "NOME_CANDIDATO",
                "NUM_TURNO",
+               "DESCRICAO_CARGO",
+               "CODIGO_CARGO",
                "DESCRICAO_ELEICAO",        
                "SIGLA_UF",
                "DES_SITUACAO_CANDIDATURA",
