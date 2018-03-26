@@ -42,7 +42,7 @@ candidatos_df <- bind_rows(candidatos_ls)
 
 rm(candidatos_ls, arg)
 
-# 2. Consistência  --------------------------------------------------------
+# 2. Consistência Geral ---------------------------------------------------
 
 glimpse(candidatos_df)
 
@@ -55,7 +55,8 @@ candidatos_df %>%
 candidatos_df <- candidatos_df %>% 
   filter(DES_SITUACAO_CANDIDATURA %in% c("DEFERIDO", "DEFERIDO COM RECURSO", "SUB JUDICE", "SUB-JÚDICE"))
 
-##2.2. Criação de uma variável única para candidatos eleitos
+
+##2.3. Criação de uma variável única para candidatos eleitos
 
 candidatos_df %>% 
   count(DESC_SIT_TOT_TURNO) %>% 
@@ -69,7 +70,7 @@ candidatos_df %>%
 candidatos_df <- candidatos_df %>% 
   mutate(ELEITO = ifelse(DESC_SIT_TOT_TURNO %in% c("ELEITO", "ELEITO POR QP", "MÉDIA", "ELEITO POR MÉDIA"), T, F))
 
-##2.3. Escolhendo uma variável para comprar a candidatura ao longo dos anos
+##2.4. Recodificando as Variáveis de CPF e de Título de Eleitor
 
 #' Duas opções:
 #'  - CPF
@@ -89,30 +90,18 @@ candidatos_df <- candidatos_df %>%
          CPF_CANDIDATO                  = parse_number(CPF_CANDIDATO),
          NUM_TITULO_ELEITORAL_CANDIDATO = parse_number(NUM_TITULO_ELEITORAL_CANDIDATO))
 
-candidatos_df %>% 
-  count(ANO_ELEICAO, CPF_CANDIDATO) %>% 
-  filter(n > 1)
+# 3. Consistência Deputado Federal ----------------------------------------
 
-candidatos_df %>% 
-  count(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
-  filter(n > 1)
+dep_federais_df <- candidatos_df %>% 
+  filter(DESCRICAO_CARGO == "DEPUTADO FEDERAL")
 
-candidatos_df %>% 
-  count(ANO_ELEICAO, SIGLA_UF, NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
-  filter(n > 1)
-
-#' Vamos ficar com o Título de Eleitor já que a quantidade de missings é menor
-#' Podemos pensar em alternativas para não perder esses dados
-
-# Filtra dados com missings ou o caso duplicado 29427820370
-
-candidatos_df <- candidatos_df %>% 
+dep_federais_df <- dep_federais_df %>% 
   filter(!is.na(NUM_TITULO_ELEITORAL_CANDIDATO)) %>% 
   filter(NUM_TITULO_ELEITORAL_CANDIDATO != 29427820370)
 
-##2.4. Quantidade de vezes concorridas
+##3.1. Quantidade de vezes concorridas
 
-candidatos_df <- candidatos_df %>% 
+dep_federais_df <- dep_federais_df %>% 
   group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
   arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>%
   mutate(CONC_VEZES = 1,
@@ -120,26 +109,25 @@ candidatos_df <- candidatos_df %>%
          CAND_NOVO = ifelse(CONC_VEZES == 1, T, F)) %>% 
   ungroup()
 
-candidatos_df %>% 
-  count(CONC_VEZES) %>% 
-  filter(n > 5)
+dep_federais_df %>% 
+  count(CONC_VEZES)
 
-##2.5. Criação da variável de duas variáveis: 1) Concorreu na eleição passada; 2) Incumbente
+##3.2. Criação da variável de duas variáveis: 1) Concorreu na eleição passada; 2) Incumbente
 
-serie_longa <- candidatos_df %>% 
+serie_longa <- dep_federais_df %>% 
   mutate(eleicao_atual = T) %>% 
   select(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO, eleicao_atual) %>% 
   spread(ANO_ELEICAO, eleicao_atual, fill = FALSE) %>% 
   gather(`1998`:`2014`, key = "ANO_ELEICAO", value = "eleicao_atual", convert = T)
 
-candidatos_df <- serie_longa %>% 
-  left_join(candidatos_df)
+dep_federais_df <- serie_longa %>% 
+  left_join(dep_federais_df)
 
-candidatos_df %>% 
+dep_federais_df %>% 
   count(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
   filter(n != 5)
 
-candidatos_df <- candidatos_df %>% 
+dep_federais_df <- dep_federais_df %>% 
   group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
   arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>% 
   mutate(CONC_ELEI_PASSADA = lag(eleicao_atual),
@@ -148,34 +136,192 @@ candidatos_df <- candidatos_df %>%
          INCUMBENTE        = ifelse(is.na(INCUMBENTE), F, INCUMBENTE)) %>% 
   ungroup()
 
-candidatos_df <- candidatos_df %>% 
+dep_federais_df <- dep_federais_df %>% 
   filter(eleicao_atual == TRUE)
 
-candidatos_df %>% 
+dep_federais_df %>% 
   count(INCUMBENTE)
 
-candidatos_df %>% 
+dep_federais_df %>% 
   filter(ELEITO == T) %>% 
   count(INCUMBENTE)
 
 rm(serie_longa)
 
-# 3. Gráficos -------------------------------------------------------------
+# 4. Consistência Governador ----------------------------------------------
 
-candidatos_df %>% 
+governador_df <- candidatos_df %>% 
+  filter(DESCRICAO_CARGO == "GOVERNADOR")
+
+##4.1.
+
+governador_df %>% 
+  count(ANO_ELEICAO, NUMNUM_TITULO_ELEITORAL_CANDIDATO)
+
+
+# 5. Consistência Deputado Estadual ---------------------------------------
+
+##5.1. Recodigicando a Variável DESCRICAO_CARGO
+
+dep_estadual_df <- candidatos_df %>% 
+  filter(DESCRICAO_CARGO %in% c("DEPUTADO ESTADUAL", "DEPUTADO DISTRITAL")) %>% 
+  mutate(DESCRICAO_CARGO = ifelse(DESCRICAO_CARGO == "DEPUTADO DISTRITAL", "DEPUTADO ESTADUAL", DESCRICAO_CARGO))
+
+dep_estadual_df %>% 
+  count(DESCRICAO_CARGO)
+
+##5.2. Avaliando Reptções de Candidatos
+
+dep_estadual_df %>% 
+  count(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  filter(n > 1)
+
+dep_estadual_df %>% 
+  count(ANO_ELEICAO, CPF_CANDIDATO) %>% 
+  filter(n > 1)
+
+candi_rep <- dep_estadual_df %>% 
+  count(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  filter(n > 1) %>% 
+  .$NUM_TITULO_ELEITORAL_CANDIDATO
+
+dep_estadual_df %>% 
+  filter(CPF_CANDIDATO %in% c(11184310149, 8942260888)) %>% 
+  View()
+
+dep_estadual_df <- dep_estadual_df %>% 
+  filter(!is.na(NUM_TITULO_ELEITORAL_CANDIDATO)) %>% 
+  filter(!(NUM_TITULO_ELEITORAL_CANDIDATO %in% candi_rep))
+  
+##5.3. Criando Variável Quantidade de Vezes Concorridas
+
+dep_estadual_df <- dep_estadual_df %>% 
+  group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>%
+  mutate(CONC_VEZES = 1,
+         CONC_VEZES = cumsum(CONC_VEZES),
+         CAND_NOVO = ifelse(CONC_VEZES == 1, T, F)) %>% 
+  ungroup()
+
+dep_estadual_df %>% 
+  count(CONC_VEZES)
+
+##5.4. Criação da variável de duas variáveis: 1) Concorreu na eleição passada; 2) Incumbente
+
+serie_longa <- dep_estadual_df %>% 
+  mutate(eleicao_atual = T) %>% 
+  select(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO, eleicao_atual) %>% 
+  spread(ANO_ELEICAO, eleicao_atual, fill = FALSE) %>% 
+  gather(`1998`:`2014`, key = "ANO_ELEICAO", value = "eleicao_atual", convert = T)
+
+dep_estadual_df <- serie_longa %>% 
+  left_join(dep_estadual_df)
+
+dep_estadual_df %>% 
+  count(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  filter(n != 5)
+
+dep_estadual_df <- dep_estadual_df %>% 
+  group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>% 
+  mutate(CONC_ELEI_PASSADA = lag(eleicao_atual),
+         CONC_ELEI_PASSADA = ifelse(is.na(CONC_ELEI_PASSADA), F, CONC_ELEI_PASSADA),
+         INCUMBENTE        = lag(ELEITO),
+         INCUMBENTE        = ifelse(is.na(INCUMBENTE), F, INCUMBENTE)) %>% 
+  ungroup()
+
+dep_estadual_df <- dep_estadual_df %>% 
+  filter(eleicao_atual == TRUE)
+
+dep_estadual_df %>% 
+  count(INCUMBENTE)
+
+dep_estadual_df %>% 
+  filter(ELEITO == T) %>% 
+  count(INCUMBENTE)
+
+rm(serie_longa)
+
+
+# 6. Consistência Senador -------------------------------------------------
+
+senador_df <- candidatos_df %>% 
+  filter(DESCRICAO_CARGO == "SENADOR")
+
+##6.1. Avaliando Repetições de Candidatos
+
+senador_df %>% 
+  count(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  filter(n > 1)
+
+senador_df <- senador_df %>% 
+  filter(!is.na(NUM_TITULO_ELEITORAL_CANDIDATO))
+
+##6.2. Criando Variável Quantidade de Vezes Concorridas
+
+senador_df <- senador_df %>% 
+  group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>%
+  mutate(CONC_VEZES = 1,
+         CONC_VEZES = cumsum(CONC_VEZES),
+         CAND_NOVO = ifelse(CONC_VEZES == 1, T, F)) %>% 
+  ungroup()
+
+senador_df %>% 
+  count(CONC_VEZES)
+
+##5.4. Criação da variável de duas variáveis: 1) Concorreu na eleição passada; 2) Incumbente
+
+serie_longa <- senador_df %>% 
+  mutate(eleicao_atual = T) %>% 
+  select(ANO_ELEICAO, NUM_TITULO_ELEITORAL_CANDIDATO, eleicao_atual) %>% 
+  spread(ANO_ELEICAO, eleicao_atual, fill = FALSE) %>% 
+  gather(`1998`:`2014`, key = "ANO_ELEICAO", value = "eleicao_atual", convert = T)
+
+senador_df <- serie_longa %>% 
+  left_join(senador_df)
+
+senador_df %>% 
+  count(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  filter(n != 5)
+
+senador_df <- senador_df %>% 
+  group_by(NUM_TITULO_ELEITORAL_CANDIDATO) %>% 
+  arrange(NUM_TITULO_ELEITORAL_CANDIDATO, ANO_ELEICAO) %>% 
+  mutate(CONC_ELEI_PASSADA = lag(eleicao_atual),
+         CONC_ELEI_PASSADA = ifelse(is.na(CONC_ELEI_PASSADA), F, CONC_ELEI_PASSADA),
+         INCUMBENTE        = lag(ELEITO),
+         INCUMBENTE        = ifelse(is.na(INCUMBENTE), F, INCUMBENTE)) %>% 
+  ungroup()
+
+senador_df <- senador_df %>% 
+  filter(eleicao_atual == TRUE)
+
+senador_df %>% 
+  count(INCUMBENTE)
+
+senador_df %>% 
+  filter(ELEITO == T) %>% 
+  count(INCUMBENTE)
+
+rm(serie_longa)
+
+# 7. Gráficos -------------------------------------------------------------
+
+dep_federais_df %>% 
   filter(ELEITO == T) %>% 
   filter(ANO_ELEICAO > 1998) %>% 
   ggplot(mapping = aes(x = ANO_ELEICAO, fill = INCUMBENTE)) +
   geom_bar(position = "fill") +
   scale_x_continuous(breaks = anos)
 
-candidatos_df %>% 
+dep_federais_df %>% 
   filter(ANO_ELEICAO > 1998) %>% 
   ggplot(mapping = aes(x = ANO_ELEICAO, fill = CAND_NOVO)) +
   geom_bar(position = "fill") +
   scale_x_continuous(breaks = anos)
 
-candidatos_df %>% 
+dep_federais_df %>% 
   filter(ANO_ELEICAO == 2014) %>% 
   filter(ELEITO == T) %>% 
   ggplot(mapping = aes(x = SIGLA_PARTIDO, fill = INCUMBENTE)) +
