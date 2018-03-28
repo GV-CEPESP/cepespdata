@@ -165,7 +165,8 @@ governador_df %>%
   View()
 
 governador_df <- governador_df %>% 
-  filter(DESCRICAO_ELEICAO != "Eleição Suplementar Governador AM")
+  filter(DESCRICAO_ELEICAO != "Eleição Suplementar Governador AM") %>% 
+  filter(NUM_TURNO == 1)
 
 ##4.2. Criando Variável Quantidade de Vezes Concorridas
 
