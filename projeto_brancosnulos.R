@@ -3,55 +3,36 @@ rm(list = ls())
 library(tidyverse)
 library(rgdal)
 library(httr)
+source("FUN.R")
 
 
 # 1. Carregando Banco -----------------------------------------------------
 
-anos <- c(seq(1998, 2014, by = 4))
+anos <- c(seq(2002, 2014, by = 4))
 
 cargos <- c(1,3,5,6)
 
-get_voto <- function(ano, cargo){
-  url_base <- "http://cepesp.io/api/consulta/tse"
-  
-  params <- list(
-    `cargo`                = cargo,
-    `ano`                  = ano,
-    `agregacao_regional`   = 2,
-    `agregacao_politica`   = 2,
-    `brancos`              = 1,
-    `nulos`                = 1,
-    
-    `selected_columns[]`   = "ANO_ELEICAO",
-    `selected_columns[]`   = "SIGLA_PARTIDO",
-    `selected_columns[]`   = "NUMERO_PARTIDO",
-    `selected_columns[]`   = "CODIGO_CARGO",
-    `selected_columns[]`   = "DESCRICAO_CARGO",
-    `selected_columns[]`   = "NUM_TITULO_ELEITORAL_CANDIDATO",
-    `selected_columns[]`   = "UF",
-    `selected_columns[]`   = "QTDE_VOTOS")
-  
-  data_frame <- GET(url_base, query = params) %>% 
-    content(type = "text/csv")
-}
+args <- expand.grid(cargo = cargos, ano = anos) %>% 
+  as.list()
 
-votos_ls <- lst()
+colunas <- c("ANO_ELEICAO",
+             "SIGLA_PARTIDO",
+             "NUMERO_PARTIDO",
+             "CODIGO_CARGO",
+             "DESCRICAO_CARGO",
+             "NUM_TITULO_ELEITORAL_CANDIDATO",
+             "UF",
+             "QTDE_VOTOS")
 
-for(ano in anos){
-  for(cargo in cargos){
-    i = length(votos_ls) + 1
-    
-    votos_ls[[i]] <- get_voto(ano, cargo)
-  }
-}
+votos_ls <- pmap(args, get_votos, colunas = colunas, agre_reg = 2, agre_pol = 2)
 
-for(i in seq_along(votos_ls)){
-  votos_ls[[i]] <- votos_ls[[i]] %>% 
-    mutate(NUM_TITULO_ELEITORAL_CANDIDATO = as.character(NUM_TITULO_ELEITORAL_CANDIDATO))
-}
+votos_ls <- votos_ls %>% 
+  map(~mutate(.data = ., 
+              NUM_TITULO_ELEITORAL_CANDIDATO = as.character(NUM_TITULO_ELEITORAL_CANDIDATO)))
 
 votos_df <- bind_rows(votos_ls)
 
+rm(args, votos_ls)
 
 # 2. Consistência ---------------------------------------------------------
 
