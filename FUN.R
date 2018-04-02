@@ -38,3 +38,18 @@ get_votos <- function(ano, cargo, colunas, agre_reg, agre_pol){
   data <- GET(url_base, query = params) %>% 
     content(type = "text/csv")
 }
+
+get_votos_only <- function(ano, cargo, agre_reg, colunas){
+  url_base <- "http://cepesp.io/api/consulta/votos"
+  
+  params <- lst(
+    `cargo` = cargo,
+    `ano`   = ano,
+    `agregacao_regional` = agre_reg
+  )
+  
+  params <- get_params(params, colunas)
+  
+  GET(url_base, query = params) %>% 
+    content(type = "text/csv")
+}
